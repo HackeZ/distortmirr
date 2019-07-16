@@ -1,0 +1,12 @@
+language: go
+
+go:
+  - 1.11
+  - 1.12
+
+env:
+  - GO111MOUDULE=on
+
+script:
+  - go test -v ./...
+
