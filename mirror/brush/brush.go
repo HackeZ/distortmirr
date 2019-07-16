@@ -77,6 +77,11 @@ func GetTypeName(f ast.Expr) string {
 			// must both SEND & RECV
 			return GetTypeName(t.Value)
 		}
+
+	case *ast.Ellipsis:
+		t := f.(*ast.Ellipsis)
+		return "..." + GetTypeName(t.Elt)
+
 	default:
 		// attempt to known what type is it for debug...
 		_ = f.(*ast.BadExpr)
