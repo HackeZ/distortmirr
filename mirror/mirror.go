@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/hackez/distortmirr/mirror/davinci"
-	"github.com/hackez/distortmirr/mirror/monet"
+	"github.com/hackerzgz/distortmirr/mirror/davinci"
+	"github.com/hackerzgz/distortmirr/mirror/monet"
 )
 
 type ScanMode int

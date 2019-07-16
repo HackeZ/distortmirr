@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hackez/distortmirr/mirror"
+	"github.com/hackerzgz/distortmirr/mirror"
 )
 
 var (

@@ -7,7 +7,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/hackez/distortmirr/mirror/brush"
+	"github.com/hackerzgz/distortmirr/mirror/brush"
 )
 
 type Davinci struct {
