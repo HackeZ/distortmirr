@@ -6,6 +6,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/hackerzgz/distortmirr/mirror/brush"
 )
 
@@ -28,12 +29,11 @@ type {{ .TypeName }}er interface {
 }
 
 type Monet struct {
-	types map[string]*ast.GenDecl
-	meths map[string]map[string]*ast.FuncDecl
+	types *treemap.Map
+	meths *treemap.Map
 }
 
-func New(types map[string]*ast.GenDecl,
-	meths map[string]map[string]*ast.FuncDecl) *Monet {
+func New(types *treemap.Map, meths *treemap.Map) *Monet {
 	return &Monet{
 		types: types,
 		meths: meths,
@@ -41,7 +41,9 @@ func New(types map[string]*ast.GenDecl,
 }
 
 func (m *Monet) Render(wr io.Writer) (err error) {
-	for tname := range m.types {
+	typeIter := m.types.Iterator()
+	for typeIter.Next() {
+		tname := typeIter.Key().(string)
 		if err = m.renderInterface(wr, tname); err != nil {
 			return err
 		}
@@ -60,13 +62,21 @@ func (m *Monet) renderInterface(wr io.Writer, name string) error {
 	}{
 		TypeName: name,
 	}
-
+	var meths *treemap.Map
+	if mm, found := m.meths.Get(name); found {
+		meths = mm.(*treemap.Map)
+	} else {
+		return nil
+	}
 	data.Meths = make([]struct {
 		Name  string
 		Input string
 		Ouput string
-	}, 0, len(m.meths[name]))
-	for mname, meth := range m.meths[name] {
+	}, 0, meths.Size())
+
+	methIter := meths.Iterator()
+	for methIter.Next() {
+		mname, meth := methIter.Key().(string), methIter.Value().(*ast.FuncDecl)
 		data.Meths = append(data.Meths, struct {
 			Name  string
 			Input string

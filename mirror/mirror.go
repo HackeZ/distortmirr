@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/hackerzgz/distortmirr/mirror/davinci"
 	"github.com/hackerzgz/distortmirr/mirror/monet"
 )
@@ -31,9 +32,9 @@ type Mirror struct {
 	pkgname string
 
 	mtx   *sync.Mutex
-	types map[string]*ast.GenDecl
-	meths map[string]map[string]*ast.FuncDecl
-	funcs map[string]*ast.FuncDecl
+	types *treemap.Map
+	meths *treemap.Map
+	funcs *treemap.Map
 }
 
 func New(pkgpath string, mode ScanMode) (*Mirror, error) {
@@ -53,9 +54,9 @@ func New(pkgpath string, mode ScanMode) (*Mirror, error) {
 	m.pkgname = m.pkgpath[strings.LastIndex(m.pkgpath, "/")+1:]
 
 	m.mtx = new(sync.Mutex)
-	m.types = make(map[string]*ast.GenDecl)
-	m.meths = make(map[string]map[string]*ast.FuncDecl)
-	m.funcs = make(map[string]*ast.FuncDecl)
+	m.types = treemap.NewWithStringComparator()
+	m.meths = treemap.NewWithStringComparator()
+	m.funcs = treemap.NewWithStringComparator()
 
 	return m, nil
 }
@@ -135,7 +136,7 @@ func (m *Mirror) registerType(decl *ast.GenDecl) {
 
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
-	m.types[typeName] = decl
+	m.types.Put(typeName, decl)
 }
 
 func (m *Mirror) registerMeth(decl *ast.FuncDecl) {
@@ -158,10 +159,15 @@ func (m *Mirror) registerMeth(decl *ast.FuncDecl) {
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
-	if _, found := m.meths[typeName]; !found {
-		m.meths[typeName] = make(map[string]*ast.FuncDecl)
+	var meths *treemap.Map
+	mm, found := m.meths.Get(typeName)
+	if found {
+		meths = mm.(*treemap.Map)
+	} else {
+		meths = treemap.NewWithStringComparator()
 	}
-	m.meths[typeName][decl.Name.Name] = decl
+	meths.Put(decl.Name.Name, decl)
+	m.meths.Put(typeName, meths)
 }
 
 func (m *Mirror) registerFunc(decl *ast.FuncDecl) {
@@ -171,7 +177,7 @@ func (m *Mirror) registerFunc(decl *ast.FuncDecl) {
 
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
-	m.funcs[decl.Name.Name] = decl
+	m.funcs.Put(decl.Name.Name, decl)
 }
 
 type Renderer interface {

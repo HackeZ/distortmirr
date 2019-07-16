@@ -7,15 +7,16 @@ import (
 	"io"
 	"strings"
 
+	"github.com/emirpasic/gods/maps/treemap"
 	"github.com/hackerzgz/distortmirr/mirror/brush"
 )
 
 type Davinci struct {
 	pkgname string
 
-	types map[string]*ast.GenDecl
-	meths map[string]map[string]*ast.FuncDecl
-	funcs map[string]*ast.FuncDecl
+	types *treemap.Map
+	meths *treemap.Map
+	funcs *treemap.Map
 }
 
 var (
@@ -62,8 +63,7 @@ func {{ .FuncName }}({{ .Input }}) {{ if ne .Output "" }}({{.Output}}){{ end }} 
 	}
 }
 
-func New(pkgname string, types map[string]*ast.GenDecl,
-	meths map[string]map[string]*ast.FuncDecl, funcs map[string]*ast.FuncDecl,
+func New(pkgname string, types *treemap.Map, meths *treemap.Map, funcs *treemap.Map,
 ) *Davinci {
 	return &Davinci{
 		pkgname: pkgname,
@@ -77,12 +77,21 @@ func New(pkgname string, types map[string]*ast.GenDecl,
 func (m *Davinci) Render(wr io.Writer) (err error) {
 	fmt.Println("davinci start printing...")
 
-	for tname, typ := range m.types {
+	typeIter := m.types.Iterator()
+	for typeIter.Next() {
+		tname, typ := typeIter.Key().(string), typeIter.Value().(*ast.GenDecl)
 		err = m.renderType(wr, typ)
 		if err != nil {
 			return err
 		}
-		for _, meth := range m.meths[tname] {
+
+		meths, found := m.meths.Get(tname)
+		if !found {
+			continue
+		}
+		methIter := meths.(*treemap.Map).Iterator()
+		for methIter.Next() {
+			meth := methIter.Value().(*ast.FuncDecl)
 			err = m.renderMeth(wr, tname, meth)
 			if err != nil {
 				return err
@@ -90,7 +99,9 @@ func (m *Davinci) Render(wr io.Writer) (err error) {
 		}
 	}
 
-	for _, fn := range m.funcs {
+	funcIter := m.funcs.Iterator()
+	for funcIter.Next() {
+		fn := funcIter.Value().(*ast.FuncDecl)
 		err = m.renderFunc(wr, fn)
 		if err != nil {
 			return err
